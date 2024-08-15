@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "851753845171",
+    "project_id": "authenticate-e6991",
+    "storage_bucket": "authenticate-e6991.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851753845171:android:0a80fffddb1d7c10ee0bc6",
+        "android_client_info": {
+          "package_name": "com.example.inschool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsS9WMGPYt4rCrol8pMmo2w0SzLG1jMFU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
