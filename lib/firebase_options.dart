@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'authenticate-e6991.firebaseapp.com',
     storageBucket: 'authenticate-e6991.appspot.com',
   );
+
 }
