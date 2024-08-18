@@ -13,9 +13,9 @@ class AuthPage extends StatelessWidget {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return const HomePage();
+            return const HomePage();  // Navigate to HomePage if user is authenticated
           } else {
-            return const LoginPage();
+            return const LoginPage();  // Navigate to LoginPage if user is not authenticated
           }
         },
       ),
