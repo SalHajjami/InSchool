@@ -11,10 +11,12 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(actions: [
-        IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))
-      ]),
-      body: Center(child: Text("Logged In")),
+      appBar: AppBar(
+        actions: [
+          IconButton(onPressed: signUserOut, icon: const Icon(Icons.logout)),
+        ],
+      ),
+      body: Center(child: const Text("Logged In")),
     );
   }
 }
