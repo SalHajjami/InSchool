@@ -8,13 +8,25 @@ class HomePage extends StatelessWidget {
     FirebaseAuth.instance.signOut();
   }
 
+  void addSeance() {
+    // Functionality to add a seance
+  }
+
+  void openDiscussion() {
+    // Functionality to open discussions
+  }
+
+  void checkSolde() {
+    // Functionality to check solde
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(actions: [
-        IconButton(onPressed: signUserOut, icon: const Icon(Icons.logout))
+        IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))
       ]),
-      body: const Center(child: Text("Logged In")),
+      body: Center(child: Text("Logged In")),
     );
   }
 }

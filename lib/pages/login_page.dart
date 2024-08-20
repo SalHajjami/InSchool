@@ -2,23 +2,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
+import 'package:inschool/pages/CreateAccountPage.dart';
+import 'package:inschool/pages/ForgotPassword.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // text editing controllers
   final emailController = TextEditingController();
-
   final passwordController = TextEditingController();
 
-  // sign user in method
   void signUserIn() async {
-    //show loading circle
     showDialog(
       context: context,
       builder: (context) {
@@ -27,55 +25,43 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
     );
-    // try sign in
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
-        password: passwordController.text
-        );
-              //pop loading circle
+        password: passwordController.text,
+      );
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-          //pop loading circle
       Navigator.pop(context);
-
       if (e.code == 'user-not-found') {
-
         wrongEmailMessage();
-
-      } 
-      else if (e.code == 'wrong-password') {
-
+      } else if (e.code == 'wrong-password') {
         wrongPasswordMessage();
-
       }
     }
-
   }
 
   void wrongEmailMessage() {
     showDialog(
-        context: context,
-        builder: (context) {
-          return const AlertDialog(
-            title: Text('Incorrect Email'),
-          );
-        },
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          title: Text('Incorrect Email'),
+        );
+      },
     );
   }
 
   void wrongPasswordMessage() {
-        showDialog(
-        context: context,
-        builder: (context) {
-          return const AlertDialog(
-            title: Text('Incorrect Password'),
-          );
-        },
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          title: Text('Incorrect Password'),
+        );
+      },
     );
   }
-
-  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,16 +72,11 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 50),
-
-              // logo
-
               Image.asset(
                 'lib/images/Inschool_logo.png',
                 height: 200,
               ),
               const SizedBox(height: 50),
-
-              // welcome back, you've been missed!
               Text(
                 'Welcome back you\'ve been missed!',
                 style: TextStyle(
@@ -103,53 +84,47 @@ class _LoginPageState extends State<LoginPage> {
                   fontSize: 16,
                 ),
               ),
-
               const SizedBox(height: 25),
-
-              // Emailtextfield
               MyTextField(
                 controller: emailController,
                 hintText: 'Email',
                 obscureText: false,
               ),
-
               const SizedBox(height: 10),
-
-              // password textfield
               MyTextField(
                 controller: passwordController,
                 hintText: 'Password',
                 obscureText: true,
               ),
-
               const SizedBox(height: 10),
-
-              // forgot password?
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 25.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: Colors.grey[600]),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 25),
-
-              // sign in button
               MyButton(
                 onTap: signUserIn,
+                text: 'Login',
               ),
-
               const SizedBox(height: 50),
-
-              // or continue with
-
-              // not a member? register now
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -158,15 +133,25 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(color: Colors.grey[700]),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    'Register now',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateAccountPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Register now',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
