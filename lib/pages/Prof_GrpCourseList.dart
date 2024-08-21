@@ -35,7 +35,8 @@ class _CoursEnGroupeState extends State<CoursEnGroupe> {
           delegate: FlutterListViewDelegate(
             (BuildContext context, int index) {
               var course = _courses[index];
-              return _buildCourseItem(course['name']!, course['startHour']!, course['endHour']!);
+              return _buildCourseItem(
+                  course['name']!, course['startHour']!, course['endHour']!);
             },
             childCount: _courses.length,
           ),
