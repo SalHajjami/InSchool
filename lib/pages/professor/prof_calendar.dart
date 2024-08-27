@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:inschool/components/my_button.dart'; // Import the custom button widget
 
 class ProfCalendar extends StatefulWidget {
   const ProfCalendar({super.key});
@@ -14,14 +15,34 @@ class _ProfCalendarState extends State<ProfCalendar> with TickerProviderStateMix
   final TextEditingController _startHourController = TextEditingController();
   final TextEditingController _endHourController = TextEditingController();
 
+  void _confirmSelection() {
+    if (_selectedDay != null && _startHourController.text.isNotEmpty && _endHourController.text.isNotEmpty) {
+      Navigator.pop(context, {
+        'day': _selectedDay,
+        'startHour': _startHourController.text,
+        'endHour': _endHourController.text,
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a date and enter the time')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEBF2FA), // Light blue background
       appBar: AppBar(
         backgroundColor: const Color(0xFF064789), // Dark blue color for the app bar
-        title: const Text('Date de la seance'),
+        title: const Text('Select Date and Time'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: _confirmSelection,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -61,21 +82,21 @@ class _ProfCalendarState extends State<ProfCalendar> with TickerProviderStateMix
             onPageChanged: (focusedDay) {
               _focusedDay = focusedDay;
             },
-            calendarStyle: CalendarStyle(
+            calendarStyle: const CalendarStyle(
               selectedDecoration: BoxDecoration(
-                color: const Color(0xFF064789), // Dark blue for selected day
+                color: Color(0xFF064789), // Dark blue for selected day
                 shape: BoxShape.circle,
               ),
               todayDecoration: BoxDecoration(
-                color: const Color(0xFF427AA1), // Medium blue for today
+                color: Color(0xFF427AA1), // Medium blue for today
                 shape: BoxShape.circle,
               ),
               defaultDecoration: BoxDecoration(
-                color: const Color(0xFFEBF2FA), // Light blue for default day
+                color: Color(0xFFEBF2FA), // Light blue for default day
                 shape: BoxShape.circle,
               ),
               weekendDecoration: BoxDecoration(
-                color: const Color(0xFFDCE2E9), // Slightly darker for weekends
+                color: Color(0xFFDCE2E9), // Slightly darker for weekends
                 shape: BoxShape.circle,
               ),
             ),
@@ -91,8 +112,6 @@ class _ProfCalendarState extends State<ProfCalendar> with TickerProviderStateMix
   }
 
   Widget _buildCourseForm() {
-    if (_selectedDay == null) return Container();
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -110,18 +129,9 @@ class _ProfCalendarState extends State<ProfCalendar> with TickerProviderStateMix
             hint: "e.g. 11:00",
           ),
           const SizedBox(height: 20),
-          Center(
-            child: ElevatedButton(
-              onPressed: _saveCourse,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF427AA1), // Medium blue for the button
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text("Save Course", style: TextStyle(fontSize: 16, color: Colors.white)),
-            ),
+          MyButton(
+            text: 'Confirm',
+            onTap: _confirmSelection,
           ),
         ],
       ),
@@ -146,39 +156,5 @@ class _ProfCalendarState extends State<ProfCalendar> with TickerProviderStateMix
         keyboardType: TextInputType.datetime,
       ),
     );
-  }
-
-  void _saveCourse() {
-    if (_startHourController.text.isNotEmpty &&
-        _endHourController.text.isNotEmpty &&
-        _selectedDay != null) {
-      // Save the course data here
-      final courseData = {
-        'day': _selectedDay,
-        'startHour': _startHourController.text,
-        'endHour': _endHourController.text,
-      };
-
-      // You can print the data or save it to a database
-      print("Course saved: $courseData");
-
-      // Clear fields after saving
-      _startHourController.clear();
-      _endHourController.clear();
-      setState(() {
-        _selectedDay = null;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Course saved on ${courseData['day']} from ${courseData['startHour']} to ${courseData['endHour']}'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-    }
   }
 }

@@ -2,9 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateAccountPage extends StatefulWidget {
-  const CreateAccountPage({Key? key}) : super(key: key);
+  const CreateAccountPage({super.key});
 
   @override
   _CreateAccountPageState createState() => _CreateAccountPageState();
@@ -17,6 +18,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _matiereController = TextEditingController(); // New controller for matiere
 
   String? _country;
   bool _isLoading = false;
@@ -24,7 +26,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   List<String> countries = ['France', 'USA', 'Canada', 'UK'];
 
-  Future<void> _createAccount() async {
+Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate() || _country == null) {
       setState(() {
         showCountryError = true;
@@ -37,11 +39,26 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     });
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // Create the user with email and password
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      // Get the newly created user ID
+      String uid = userCredential.user!.uid;
+
+      // Store additional user information in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'username': _usernameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'country': _country,
+        'matiere': _matiereController.text.trim(),  // Save the "matière"
+      });
+
+      // Navigate back or to the next page
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       showDialog(
@@ -64,7 +81,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext builder) {
-        return Container(
+        return SizedBox(
           height: MediaQuery.of(context).copyWith().size.height / 3,
           child: Column(
             children: [
@@ -177,6 +194,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                     controller: _passwordController,
                     hintText: 'Password',
                     obscureText: true,
+                  ),
+                  const SizedBox(height: 20),
+                  MyTextField(
+                    controller: _matiereController, // Matière field
+                    hintText: 'Matière',
+                    obscureText: false,
                   ),
                   const SizedBox(height: 32),
                   _isLoading

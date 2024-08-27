@@ -4,7 +4,7 @@ import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({Key? key}) : super(key: key);
+  const ForgotPasswordPage({super.key});
 
   @override
   _ForgotPasswordPageState createState() => _ForgotPasswordPageState();

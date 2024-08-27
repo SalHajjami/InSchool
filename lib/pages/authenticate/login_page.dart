@@ -2,9 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
-import 'package:inschool/pages/CreateAccountPage.dart';
-import 'package:inschool/pages/ForgotPassword.dart';
-import 'package:inschool/pages/Home_Page.dart'; // Import the HomePage
+import 'package:inschool/pages/authenticate/create_account_page.dart';
+import 'package:inschool/pages/authenticate/forgot_password.dart';
+import 'package:inschool/pages/home/Home_Page.dart'; // Import the HomePage
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.blue[300],
       body: SafeArea(
         child: SingleChildScrollView(
           child: Center(
@@ -93,10 +93,10 @@ class _LoginPageState extends State<LoginPage> {
                   height: 200,
                 ),
                 const SizedBox(height: 50),
-                Text(
+                const Text(
                   'Welcome back you\'ve been missed!',
                   style: TextStyle(
-                    color: Colors.grey[700],
+                    color: Colors.white,
                     fontSize: 16,
                   ),
                 ),
