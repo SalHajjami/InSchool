@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
-import 'package:inschool/pages/authenticate/create_account_page.dart';
+import 'package:inschool/pages/authenticate/Acc_Type.dart';
 import 'package:inschool/pages/authenticate/forgot_password.dart';
 import 'package:inschool/pages/home/Home_Page.dart'; // Import the HomePage
 
@@ -154,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const CreateAccountPage(),
+                            builder: (context) => const AccTypePage(),
                           ),
                         );
                       },

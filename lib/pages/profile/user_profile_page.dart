@@ -2,11 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class UserProfilePage extends StatelessWidget {
+class UserProfilePage extends StatefulWidget {
+  const UserProfilePage({super.key});
+
+  @override
+  _UserProfilePageState createState() => _UserProfilePageState();
+}
+
+class _UserProfilePageState extends State<UserProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late Future<Map<String, dynamic>> _userProfileFuture;
 
-  UserProfilePage({super.key});
+  @override
+  void initState() {
+    super.initState();
+    _userProfileFuture = _fetchUserProfile();
+  }
 
   Future<Map<String, dynamic>> _fetchUserProfile() async {
     User? user = _auth.currentUser;
@@ -19,6 +31,50 @@ class UserProfilePage extends StatelessWidget {
     return {};
   }
 
+  void _editUserProfile(BuildContext context, String field, String currentValue) {
+    TextEditingController controller = TextEditingController(text: currentValue);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit $field'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: 'Enter new $field',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                // Update Firestore with new data
+                User? user = _auth.currentUser;
+                if (user != null) {
+                  await _firestore.collection('users').doc(user.uid).update({
+                    field.toLowerCase(): controller.text,
+                  });
+                  // Refresh the profile data
+                  setState(() {
+                    _userProfileFuture = _fetchUserProfile();
+                  });
+                }
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +83,7 @@ class UserProfilePage extends StatelessWidget {
         backgroundColor: const Color(0xFF064789),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _fetchUserProfile(),
+        future: _userProfileFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -67,12 +123,12 @@ class UserProfilePage extends StatelessWidget {
                             ],
                           ),
                           const Divider(),
-                          _buildProfileField('Username', userData['username']),
-                          _buildProfileField('First Name', userData['first_name']),
-                          _buildProfileField('Last Name', userData['last_name']),
-                          _buildProfileField('Email', userData['email']),
-                          _buildProfileField('Country', userData['country']),
-                          _buildProfileField('Matière', userData['matiere']),
+                          _buildProfileField(context, 'Username', userData['username']),
+                          _buildProfileField(context, 'First Name', userData['first_name']),
+                          _buildProfileField(context, 'Last Name', userData['last_name']),
+                          _buildProfileField(context, 'Email', userData['email']),
+                          _buildProfileField(context, 'Country', userData['country']),
+                          _buildProfileField(context, 'Matière', userData['matiere']),
                         ],
                       ),
                     ),
@@ -86,7 +142,7 @@ class UserProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileField(String title, String? value) {
+  Widget _buildProfileField(BuildContext context, String title, String? value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -115,6 +171,10 @@ class UserProfilePage extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.blue),
+            onPressed: () => _editUserProfile(context, title, value ?? ''),
           ),
         ],
       ),
