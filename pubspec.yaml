@@ -40,10 +40,13 @@ dependencies:
   cupertino_icons: ^1.0.6
   firebase_core: ^3.3.0
   firebase_auth: ^5.1.4
-  table_calendar: ^3.1.2
+  table_calendar: ^3.0.0
   flutter_list_view: ^1.1.28
   cloud_firestore : ^5.2.1
+  flutter_chat_ui: ^1.6.15
+
   
+  flutter_chat_types: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

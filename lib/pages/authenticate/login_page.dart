@@ -2,10 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
-import 'package:inschool/pages/authenticate/create_account_page.dart'; // Professor registration
-import 'package:inschool/pages/authenticate/EtudiantRegisterPage.dart'; // Student registration
+import 'package:inschool/pages/authenticate/create_account_page.dart';
 import 'package:inschool/pages/authenticate/forgot_password.dart';
 import 'package:inschool/pages/home/Home_Page.dart';
+import '../authenticate/EtudiantRegisterPage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -180,7 +180,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: showUserTypeDialog,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateAccountPage(),
+                          ),
+                        );
+                      },
                       child: const Text(
                         'Register now',
                         style: TextStyle(
