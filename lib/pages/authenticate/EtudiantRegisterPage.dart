@@ -2,18 +2,15 @@ import 'package:csc_picker/csc_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
-class CreateAccountPage extends StatefulWidget {
-  const CreateAccountPage({super.key});
+class EtudiantRegisterPage extends StatefulWidget {
+  const EtudiantRegisterPage({super.key});
 
   @override
-  _CreateAccountPageState createState() => _CreateAccountPageState();
+  _EtudiantRegisterPageState createState() => _EtudiantRegisterPageState();
 }
 
-class _CreateAccountPageState extends State<CreateAccountPage> {
+class _EtudiantRegisterPageState extends State<EtudiantRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
@@ -23,21 +20,20 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   String? _selectedCountry;
   String? _selectedLevel;
-  String? _selectedMatiere;
-  File? _selectedDocument;
+  String? _selectedCourse;
   bool _isLoading = false;
   bool showCountryError = false;
 
-  // Define lists for education levels and subjects
+  // Define lists for education levels and courses for students
   final List<String> levels = ['Primary School', 'Middle School', 'High School', 'University'];
-  final Map<String, List<String>> matiereByLevel = {
+  final Map<String, List<String>> coursesByLevel = {
     'Primary School': ['Mathematics', 'Science', 'English'],
     'Middle School': ['Mathematics', 'Science', 'English', 'History'],
     'High School': ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'History'],
     'University': ['Engineering', 'Medicine', 'Law', 'Arts'],
   };
 
-  Future<void> _createAccount() async {
+  Future<void> _registerEtudiant() async {
     if (!_formKey.currentState!.validate() || _selectedCountry == null) {
       setState(() {
         showCountryError = true;
@@ -50,7 +46,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     });
 
     try {
-      // Create user with email and password
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
@@ -58,22 +53,14 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       String uid = userCredential.user!.uid;
 
-      // Upload document if selected
-      String? documentUrl;
-      if (_selectedDocument != null) {
-        documentUrl = await _uploadDocument(uid);
-      }
-
-      // Save user details in Firestore
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      await FirebaseFirestore.instance.collection('etudiants').doc(uid).set({
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'username': _usernameController.text.trim(),
         'email': _emailController.text.trim(),
         'country': _selectedCountry,
         'level': _selectedLevel,
-        'matiere': _selectedMatiere,
-        'documentUrl': documentUrl,
+        'course': _selectedCourse,
       });
 
       Navigator.pop(context);
@@ -94,46 +81,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     });
   }
 
-  Future<String?> _uploadDocument(String userId) async {
-    try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('documents/$userId/${_selectedDocument!.path.split('/').last}');
-
-      await storageRef.putFile(_selectedDocument!);
-
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      print("Error uploading document: $e");
-      return null;
-    }
-  }
-
-  Future<void> _pickDocument() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'], // Allowed document types
-    );
-
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedDocument = File(result.files.single.path!);
-      });
-    }
-  }
-
-  void _removeDocument() {
-    setState(() {
-      _selectedDocument = null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Account'),
+        title: const Text('Student Registration'),
         backgroundColor: Colors.blue,
         elevation: 0,
       ),
@@ -144,7 +97,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Center(
                     child: Image.asset(
@@ -221,65 +174,28 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                     onChanged: (newValue) {
                       setState(() {
                         _selectedLevel = newValue;
-                        _selectedMatiere = null; // Reset matiere when level changes
+                        _selectedCourse = null; // Reset course when level changes
                       });
                     },
                   ),
                   const SizedBox(height: 20),
                   _buildDropdown(
-                    value: _selectedMatiere,
-                    hint: 'Matière',
-                    items: _selectedLevel != null ? matiereByLevel[_selectedLevel!]! : [],
+                    value: _selectedCourse,
+                    hint: 'Course',
+                    items: _selectedLevel != null ? coursesByLevel[_selectedLevel!]! : [],
                     onChanged: (newValue) {
                       setState(() {
-                        _selectedMatiere = newValue;
+                        _selectedCourse = newValue;
                       });
                     },
                   ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: 200, // Adjust width as needed
-                    child: ElevatedButton(
-                      onPressed: _pickDocument,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Upload Document',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_selectedDocument != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Selected file: ${_selectedDocument!.path.split('/').last}'),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: _removeDocument,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 32),
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: _createAccount,
+                            onPressed: _registerEtudiant,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16.0),
                               backgroundColor: Colors.blue,

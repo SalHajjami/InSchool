@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../seance/edit_seance.dart';
 class ProfGrpCourseList extends StatelessWidget {
   const ProfGrpCourseList({super.key});
 
@@ -35,6 +35,7 @@ class ProfGrpCourseList extends StatelessWidget {
             itemCount: courses.length,
             itemBuilder: (context, index) {
               final course = courses[index].data() as Map<String, dynamic>;
+              final courseId = courses[index].id; // Get the document ID
 
               return ListTile(
                 title: Text('Matiere: ${course['matiere']}'),
@@ -47,12 +48,75 @@ class ProfGrpCourseList extends StatelessWidget {
                   'End Hour: ${course['endHour']}\n'
                   'Mode: ${course['mode']}',
                 ),
-                trailing: Text('Type: ${course['type']}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditCoursePage(
+                              courseId: courseId,
+                              initialData: course,
+                              collectionName: 'cours_engroupe',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _confirmDelete(context, courseId),
+                    ),
+                  ],
+                ),
               );
             },
           );
         },
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context, String courseId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Course'),
+          content: const Text('Are you sure you want to delete this course?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // Close the dialog
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteCourse(courseId, 'cours_engroupe');
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteCourse(String courseId, String collectionName) {
+    FirebaseFirestore.instance
+        .collection(collectionName)
+        .doc(courseId)
+        .delete()
+        .then((_) {
+          // Show a success message if needed
+          print("Course deleted successfully");
+        })
+        .catchError((error) {
+          // Handle errors if needed
+          print("Error deleting course: $error");
+        });
   }
 }
