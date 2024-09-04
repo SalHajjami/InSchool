@@ -30,8 +30,6 @@ class _AddSeancePageState extends State<AddSeancePage> {
   final List<String> _modes = ['en ligne', 'présentielle'];
   final List<String> _types = ['en groupe', 'individuel'];
 
-  bool _isGroupType = false; // New boolean variable to manage visibility
-
   @override
   void initState() {
     super.initState();
@@ -83,7 +81,7 @@ class _AddSeancePageState extends State<AddSeancePage> {
         _villeController.text.isNotEmpty &&
         _prixController.text.isNotEmpty &&
         _niveauController.text.isNotEmpty &&
-        (_isGroupType ? _nombreEtudiantsController.text.isNotEmpty : true) &&
+        _nombreEtudiantsController.text.isNotEmpty &&
         _selectedMode != null &&
         _selectedType != null &&
         _matiere != null) {
@@ -95,7 +93,7 @@ class _AddSeancePageState extends State<AddSeancePage> {
         niveau: _niveauController.text,
         startHour: _startHourController.text,
         endHour: _endHourController.text,
-        nombreEtudiants: _isGroupType ? int.parse(_nombreEtudiantsController.text) : 0,
+        nombreEtudiants: int.parse(_nombreEtudiantsController.text),
         date: _selectedDate!,
         mode: _selectedMode!,
       );
@@ -195,6 +193,12 @@ class _AddSeancePageState extends State<AddSeancePage> {
               controller: _niveauController,
               decoration: const InputDecoration(labelText: "Niveau"),
             ),
+            TextField(
+              controller: _nombreEtudiantsController,
+              decoration:
+                  const InputDecoration(labelText: "Nombre d'Étudiants"),
+              keyboardType: TextInputType.number,
+            ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedMode,
@@ -228,7 +232,6 @@ class _AddSeancePageState extends State<AddSeancePage> {
               onChanged: (value) {
                 setState(() {
                   _selectedType = value;
-                  _isGroupType = value == 'en groupe'; // Update visibility state
                 });
               },
               decoration: const InputDecoration(
@@ -237,15 +240,6 @@ class _AddSeancePageState extends State<AddSeancePage> {
               ),
             ),
             const SizedBox(height: 15),
-            Visibility(
-              visible: _isGroupType, // Show only if 'en groupe' is selected
-              child: TextField(
-                controller: _nombreEtudiantsController,
-                decoration: const InputDecoration(labelText: "Nombre d'Étudiants"),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            const SizedBox(height: 16),
             MyButton(
               text: 'Select Time',
               onTap: _selectDate,

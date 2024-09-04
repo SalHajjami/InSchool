@@ -2,10 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
-// Student registration
+import 'package:inschool/pages/authenticate/create_account_page.dart'; // Professor registration
+import 'package:inschool/pages/authenticate/EtudiantRegisterPage.dart'; // Student registration
 import 'package:inschool/pages/authenticate/forgot_password.dart';
 import 'package:inschool/pages/home/Home_Page.dart';
-import '../authenticate/Acc_type.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -20,7 +21,6 @@ class _LoginPageState extends State<LoginPage> {
   void signUserIn() async {
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator(),
@@ -36,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Close the progress dialog
-      if (mounted) Navigator.pop(context);
+      Navigator.pop(context);
 
       // Navigate to the HomePage
       Navigator.pushReplacement(
@@ -45,59 +45,67 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on FirebaseAuthException catch (e) {
       // Close the progress dialog
-      if (mounted) Navigator.pop(context);
+      Navigator.pop(context);
 
       // Show appropriate error message
-      switch (e.code) {
-        case 'user-not-found':
-          _showErrorDialog('No user found for that email.');
-          break;
-        case 'wrong-password':
-          _showErrorDialog('Wrong password provided.');
-          break;
-        case 'invalid-email':
-          _showErrorDialog('The email address is badly formatted.');
-          break;
-        case 'user-disabled':
-          _showErrorDialog('This user has been disabled.');
-          break;
-        case 'too-many-requests':
-          _showErrorDialog('Too many attempts. Try again later.');
-          break;
-        default:
-          _showErrorDialog('An unexpected error occurred. Please try again.');
-          break;
+      if (e.code == 'user-not-found') {
+        wrongEmailMessage();
+      } else if (e.code == 'wrong-password') {
+        wrongPasswordMessage();
       }
-    } catch (e) {
-      // Close the progress dialog
-      if (mounted) Navigator.pop(context);
-
-      // Show a generic error message
-      _showErrorDialog('An error occurred. Please check your internet connection and try again.');
     }
   }
 
-  void _showErrorDialog(String message) {
+  void wrongEmailMessage() {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Login Failed'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        return const AlertDialog(
+          title: Text('Incorrect Email'),
         );
       },
     );
   }
 
-
+  void showUserTypeDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Register as'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('Professor'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreateAccountPage(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('Student'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EtudiantRegisterPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,14 +180,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AccTypePage(),
-                          ),
-                        );
-                      },
+                      onTap: showUserTypeDialog,
                       child: const Text(
                         'Register now',
                         style: TextStyle(
