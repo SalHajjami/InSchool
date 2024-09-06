@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:inschool/pages/Etudiant/Etd_HomePage.dart';
 import 'package:inschool/pages/authenticate/login_page.dart';
 
 void main() async {

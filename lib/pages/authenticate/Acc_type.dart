@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:inschool/pages/authenticate/EtudiantRegisterPage.dart';
 import 'package:inschool/pages/authenticate/create_account_page.dart';
-
+import 'package:inschool/pages/authenticate/EtudiantRegisterPage.dart';
 
 class AccTypePage extends StatefulWidget {
   const AccTypePage({super.key});

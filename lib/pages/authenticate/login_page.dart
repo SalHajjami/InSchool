@@ -1,11 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:inschool/components/my_button.dart';
 import 'package:inschool/components/my_textfield.dart';
-import 'package:inschool/pages/authenticate/create_account_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:inschool/pages/authenticate/forgot_password.dart';
-import 'package:inschool/pages/home/Home_Page.dart';
-import '../authenticate/EtudiantRegisterPage.dart';
+import 'package:inschool/pages/home/Home_Page.dart'; // Professor HomePage
+import 'package:inschool/pages/Etudiant/Etd_HomePage.dart'; // Student HomePage
+import '../authenticate/Acc_type.dart'; // Registration Page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   void signUserIn() async {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator(),
@@ -30,78 +32,83 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // Sign in the user
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text,
         password: passwordController.text,
       );
 
-      // Close the progress dialog
-      Navigator.pop(context);
+      // Get the user's ID
+      String uid = userCredential.user!.uid;
 
-      // Navigate to the HomePage
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      // Check if the user is a professor or a student
+      DocumentSnapshot professorDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      DocumentSnapshot studentDoc = await FirebaseFirestore.instance.collection('etudiants').doc(uid).get();
+
+      // Close the progress dialog
+      if (mounted) Navigator.pop(context);
+
+      // Navigate based on the collection the user is found in
+      if (professorDoc.exists) {
+        // Navigate to Professor's HomePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      } else if (studentDoc.exists) {
+        // Navigate to Student's Etd_HomePage
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const EtdHomePage()),
+        );
+      } else {
+        _showErrorDialog('User not found in any collection.');
+      }
     } on FirebaseAuthException catch (e) {
       // Close the progress dialog
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
 
       // Show appropriate error message
-      if (e.code == 'user-not-found') {
-        wrongEmailMessage();
-      } else if (e.code == 'wrong-password') {
-        wrongPasswordMessage();
+      switch (e.code) {
+        case 'user-not-found':
+          _showErrorDialog('No user found for that email.');
+          break;
+        case 'wrong-password':
+          _showErrorDialog('Wrong password provided.');
+          break;
+        case 'invalid-email':
+          _showErrorDialog('The email address is badly formatted.');
+          break;
+        case 'user-disabled':
+          _showErrorDialog('This user has been disabled.');
+          break;
+        case 'too-many-requests':
+          _showErrorDialog('Too many attempts. Try again later.');
+          break;
+        default:
+          _showErrorDialog('An unexpected error occurred. Please try again.');
+          break;
       }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      _showErrorDialog('An error occurred. Please check your internet connection and try again.');
     }
   }
 
-  void wrongEmailMessage() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return const AlertDialog(
-          title: Text('Incorrect Email'),
-        );
-      },
-    );
-  }
-
-  void showUserTypeDialog() {
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Register as'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: const Text('Professor'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateAccountPage(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('Student'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const EtudiantRegisterPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+          title: const Text('Login Failed'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         );
       },
     );
@@ -184,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const CreateAccountPage(),
+                            builder: (context) => const AccTypePage(),
                           ),
                         );
                       },
