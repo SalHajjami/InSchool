@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inschool/pages/authenticate/create_account_page.dart';
-import 'package:inschool/pages/authenticate/create_StuAcc.dart';
+import 'package:inschool/pages/authenticate/EtudiantRegisterPage.dart';
 
 class AccTypePage extends StatefulWidget {
   const AccTypePage({super.key});
@@ -98,7 +98,7 @@ class _AccTypePageState extends State<AccTypePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CreateStuAccPage(),
+                        builder: (context) => const EtudiantRegisterPage(),
                       ),
                     );
                   } else if (selectedAccountType == 'Professeur') {

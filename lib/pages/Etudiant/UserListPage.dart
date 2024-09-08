@@ -10,13 +10,13 @@ class UserListPage extends StatelessWidget {
     {'name': 'Ismail', 'message': 'Seen 1 d ago', 'image': 'lib/images/ismail.png'},
   ];
 
-  UserListPage({Key? key}) : super(key: key);
+  UserListPage({super.key});
 
   void openChat(BuildContext context, String userName) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatPage(), // Replace with your ChatPage widget
+        builder: (context) => const ChatPage(), // Replace with your ChatPage widget
       ),
     );
   }
