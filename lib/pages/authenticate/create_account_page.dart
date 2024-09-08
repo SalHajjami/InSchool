@@ -1,10 +1,8 @@
-import 'package:csc_picker/csc_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:inschool/components/my_button.dart';
+import 'package:inschool/components/my_textfield.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -20,24 +18,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _matiereController = TextEditingController(); // New controller for matiere
 
-  String? _selectedCountry;
-  String? _selectedLevel;
-  String? _selectedMatiere;
-  File? _selectedDocument;
+  String? _country;
   bool _isLoading = false;
   bool showCountryError = false;
 
-  // Define lists for education levels and subjects
-  final List<String> levels = ['Primary School', 'Middle School', 'High School', 'University'];
-  final Map<String, List<String>> matiereByLevel = {
-    'Primary School': ['Mathematics', 'Science', 'English'],
-    'Middle School': ['Mathematics', 'Science', 'English', 'History'],
-    'High School': ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'History'],
-    'University': ['Engineering', 'Medicine', 'Law', 'Arts'],
-  };
+  List<String> countries = ['France', 'USA', 'Canada', 'UK'];
+
 Future<void> _createAccount() async {
-    if (!_formKey.currentState!.validate() || _selectedCountry == null) {
+    if (!_formKey.currentState!.validate() || _country == null) {
       setState(() {
         showCountryError = true;
       });
@@ -47,33 +37,28 @@ Future<void> _createAccount() async {
     setState(() {
       _isLoading = true;
     });
-try {
-      // Create user with email and password
+
+    try {
+      // Create the user with email and password
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-
+      // Get the newly created user ID
       String uid = userCredential.user!.uid;
 
-      // Upload document if selected
-      String? documentUrl;
-      if (_selectedDocument != null) {
-        documentUrl = await _uploadDocument(uid);
-      }
-
-      // Save user details in Firestore
+      // Store additional user information in Firestore
       await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'username': _usernameController.text.trim(),
         'email': _emailController.text.trim(),
-        'country': _selectedCountry,
-        'level': _selectedLevel,
-        'matiere': _selectedMatiere,
-        'documentUrl': documentUrl,
+        'country': _country,
+        'matiere': _matiereController.text.trim(),  // Save the "matière"
       });
+
+      // Navigate back or to the next page
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       showDialog(
@@ -92,48 +77,43 @@ try {
     });
   }
 
-  Future<String?> _uploadDocument(String userId) async {
-    try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('documents/$userId/${_selectedDocument!.path.split('/').last}');
-
-      await storageRef.putFile(_selectedDocument!);
-
-      return await storageRef.getDownloadURL();
-    } catch (e) {
-      print("Error uploading document: $e");
-      return null;
-    }
-  }
-   Future<void> _pickDocument() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'], // Allowed document types
-
+  void _showCountryPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext builder) {
+        return SizedBox(
+          height: MediaQuery.of(context).copyWith().size.height / 3,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: countries.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return ListTile(
+                      title: Text(countries[index]),
+                      onTap: () {
+                        setState(() {
+                          _country = countries[index];
+                          showCountryError = false;
+                        });
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _selectedDocument = File(result.files.single.path!);
-      });
-    }
   }
 
-  void _removeDocument() {
-    setState(() {
-      _selectedDocument = null;
-    });
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        backgroundColor: Colors.blue,
-        elevation: 0,
-      ),
+      backgroundColor: Colors.grey[300],
+      appBar: AppBar(title: const Text('Create Account')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -141,59 +121,61 @@ try {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: <Widget>[
-                  Center(
-                    child: Image.asset(
-                      'lib/images/Inschool_logo.png',
-                      width: 150,
-                      height: 150,
-                    ),
+                  Image.asset(
+                    'lib/images/Inschool_logo.png',
+                    width: 200,
+                    height: 200,
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(
+                  MyTextField(
                     controller: _firstNameController,
                     hintText: 'First Name',
-
+                    obscureText: false,
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(
+                  MyTextField(
                     controller: _lastNameController,
                     hintText: 'Last Name',
-
+                    obscureText: false,
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(
+                  MyTextField(
                     controller: _usernameController,
                     hintText: 'Username',
-
+                    obscureText: false,
                   ),
                   const SizedBox(height: 20),
-                  CSCPicker(
-                    onCountryChanged: (value) {
+                  GestureDetector(
+                    onTap: () {
                       setState(() {
-                        _selectedCountry = value;
                         showCountryError = false;
                       });
-                      },
-                    onStateChanged: (value) {},
-                    onCityChanged: (value) {},
-                    countryDropdownLabel: 'Country',
-                    stateDropdownLabel: 'State',
-                    cityDropdownLabel: 'City',
-                    showStates: false,
-                    showCities: false,
-                    dropdownDecoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.shade300),
+                      _showCountryPicker(context);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.flag),
+                          const SizedBox(width: 16),
+                          Text(
+                            _country ?? 'Select Country',
+                            style: TextStyle(
+                              color:
+                                  _country == null ? Colors.grey : Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    dropdownItemStyle: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black,
-                       ),
                   ),
-                  if (showCountryError && _selectedCountry == null)
+                  if (showCountryError && _country == null)
                     const Padding(
                       padding: EdgeInsets.only(top: 8.0),
                       child: Text(
@@ -202,102 +184,31 @@ try {
                       ),
                     ),
                   const SizedBox(height: 20),
-                  _buildTextField(
+                  MyTextField(
                     controller: _emailController,
                     hintText: 'Email',
-                    keyboardType: TextInputType.emailAddress,
+                    obscureText: false,
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField(
+                  MyTextField(
                     controller: _passwordController,
                     hintText: 'Password',
                     obscureText: true,
                   ),
                   const SizedBox(height: 20),
-                  _buildDropdown(
-                    value: _selectedLevel,
-                    hint: 'Education Level',
-                    items: levels,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedLevel = newValue;
-                        _selectedMatiere = null; // Reset matiere when level changes
-                      });
-                    },
+                  MyTextField(
+                    controller: _matiereController, // Matière field
+                    hintText: 'Matière',
+                    obscureText: false,
                   ),
-                  const SizedBox(height: 20),
-                  _buildDropdown(
-                    value: _selectedMatiere,
-                    hint: 'Matière',
-                    items: _selectedLevel != null ? matiereByLevel[_selectedLevel!]! : [],
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedMatiere = newValue;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: 200, // Adjust width as needed
-                    child: ElevatedButton(
-                      onPressed: _pickDocument,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Upload Document',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (_selectedDocument != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Selected file: ${_selectedDocument!.path.split('/').last}'),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: _removeDocument,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 32),
                   _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _createAccount,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              backgroundColor: Colors.blue,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'Register',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                      ? const CircularProgressIndicator()
+                      : MyButton(
+                          onTap: _createAccount,
+                          text: 'Register',
                         ),
-                        const SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -326,63 +237,6 @@ try {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'This field cannot be empty';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildDropdown({
-    required String? value,
-    required String hint,
-    required List<String> items,
-    required void Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16.0),
-      ),
-      hint: Text(hint),
-      items: items.map<DropdownMenuItem<String>>((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-      onChanged: onChanged,
     );
   }
 }

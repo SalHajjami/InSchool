@@ -1,12 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:inschool/components/my_button.dart';
-import 'package:inschool/components/my_textfield.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:inschool/pages/authenticate/Acc_Type.dart';
 import 'package:inschool/pages/authenticate/forgot_password.dart';
-import 'package:inschool/pages/home/Home_Page.dart'; // Professor HomePage
-import 'package:inschool/pages/Etudiant/Etd_HomePage.dart'; // Student HomePage
-import '../authenticate/Acc_type.dart'; // Registration Page
+import 'package:inschool/pages/Etudiant/StudentDrawerWrapper.dart'; 
+import 'package:inschool/pages/home/Home_Page.dart'; // Import professor homepage
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,9 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   final passwordController = TextEditingController();
 
   void signUserIn() async {
+    // Show loading indicator
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator(),
@@ -31,84 +29,88 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      // Sign in the user
+      // Sign in the user with email and password
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
-      // Get the user's ID
+      // Get the user's unique ID (UID)
       String uid = userCredential.user!.uid;
 
-      // Check if the user is a professor or a student
-      DocumentSnapshot professorDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      DocumentSnapshot studentDoc = await FirebaseFirestore.instance.collection('etudiants').doc(uid).get();
+      // First check if the user is in the 'etudiants' collection (student)
+      DocumentSnapshot studentDoc = await FirebaseFirestore.instance
+          .collection('etudiants')
+          .doc(uid)
+          .get();
 
-      // Close the progress dialog
-      if (mounted) Navigator.pop(context);
+      if (studentDoc.exists) {
+        // User is a student, redirect to the student home page
+        Navigator.pop(context); // Close the loading dialog
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const StudentDrawerWrapper()),
+        );
+        return; // Exit the method, we don't want to check the 'users' collection now
+      }
 
-      // Navigate based on the collection the user is found in
-      if (professorDoc.exists) {
-        // Navigate to Professor's HomePage
+      // Now check if the user is in the 'users' collection (professor or other)
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      if (userDoc.exists) {
+        // User is a professor or another role, redirect to the professor home page
+        Navigator.pop(context); // Close the loading dialog
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
-      } else if (studentDoc.exists) {
-        // Navigate to Student's Etd_HomePage
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const EtdHomePage()),
-        );
       } else {
-        _showErrorDialog('User not found in any collection.');
+        // Close the progress dialog
+        Navigator.pop(context);
+        // If user not found in any collection, show an error
+        showDialog(
+          context: context,
+          builder: (context) {
+            return const AlertDialog(
+              title: Text('Error'),
+              content: Text('User not found in the system.'),
+            );
+          },
+        );
       }
     } on FirebaseAuthException catch (e) {
       // Close the progress dialog
-      if (mounted) Navigator.pop(context);
+      Navigator.pop(context);
 
       // Show appropriate error message
-      switch (e.code) {
-        case 'user-not-found':
-          _showErrorDialog('No user found for that email.');
-          break;
-        case 'wrong-password':
-          _showErrorDialog('Wrong password provided.');
-          break;
-        case 'invalid-email':
-          _showErrorDialog('The email address is badly formatted.');
-          break;
-        case 'user-disabled':
-          _showErrorDialog('This user has been disabled.');
-          break;
-        case 'too-many-requests':
-          _showErrorDialog('Too many attempts. Try again later.');
-          break;
-        default:
-          _showErrorDialog('An unexpected error occurred. Please try again.');
-          break;
+      if (e.code == 'user-not-found') {
+        wrongEmailMessage();
+      } else if (e.code == 'wrong-password') {
+        wrongPasswordMessage();
       }
-    } catch (e) {
-      if (mounted) Navigator.pop(context);
-      _showErrorDialog('An error occurred. Please check your internet connection and try again.');
     }
   }
 
-  void _showErrorDialog(String message) {
+  void wrongEmailMessage() {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Login Failed'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        return const AlertDialog(
+          title: Text('Incorrect Email'),
+        );
+      },
+    );
+  }
+
+  void wrongPasswordMessage() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          title: Text('Incorrect Password'),
         );
       },
     );
@@ -117,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[300],
+      backgroundColor: const Color(0xFF16325B), // Background color
       body: SafeArea(
         child: SingleChildScrollView(
           child: Center(
@@ -133,21 +135,35 @@ class _LoginPageState extends State<LoginPage> {
                 const Text(
                   'Welcome back you\'ve been missed!',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFFFFDC7F), // Text color
                     fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 25),
-                MyTextField(
+                TextFormField(
                   controller: emailController,
-                  hintText: 'Email',
-                  obscureText: false,
+                  decoration: InputDecoration(
+                    hintText: 'Email',
+                    filled: true,
+                    fillColor: const Color(0xFF78B7D0), // Field background color
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 10),
-                MyTextField(
+                TextFormField(
                   controller: passwordController,
-                  hintText: 'Password',
                   obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Password',
+                    filled: true,
+                    fillColor: const Color(0xFF78B7D0), // Field background color
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Padding(
@@ -164,18 +180,31 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
                         },
-                        child: Text(
+                        child: const Text(
                           'Forgot Password?',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(color: Color(0xFFFFDC7F)), // Text color
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 25),
-                MyButton(
-                  onTap: signUserIn,
-                  text: 'Login',
+                ElevatedButton(
+                  onPressed: signUserIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFDC7F), // Button background color
+                    foregroundColor: Colors.black, // Button text color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                  ),
+                  child: const Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 50),
                 Row(
@@ -183,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     Text(
                       'Not a member?',
-                      style: TextStyle(color: Colors.grey[700]),
+                      style: TextStyle(color: Colors.grey[200]),
                     ),
                     const SizedBox(width: 4),
                     GestureDetector(
@@ -198,7 +227,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         'Register now',
                         style: TextStyle(
-                          color: Colors.blue,
+                          color: Color(0xFF78B7D0), // Link color
                           fontWeight: FontWeight.bold,
                         ),
                       ),
